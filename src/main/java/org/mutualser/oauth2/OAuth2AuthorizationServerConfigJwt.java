@@ -36,6 +36,12 @@ public class OAuth2AuthorizationServerConfigJwt extends AuthorizationServerConfi
     
     @Value("${defaultclient.secret}")
     private String clientSecret;
+    
+    @Value("${JWT.signingKey}")
+    private String jwtsigningKey;
+    
+    @Value("${oauth2.globalSecret}")
+    private String globalSecret;
 
     @Override
     public void configure(final AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
@@ -44,8 +50,11 @@ public class OAuth2AuthorizationServerConfigJwt extends AuthorizationServerConfi
 
     @Override
     public void configure(final ClientDetailsServiceConfigurer clients) throws Exception {
+    	System.out.println("globalSecret: " + globalSecret);
         clients.inMemory().withClient(clientID)
-                .secret(passwordEncoder().encode("secret")).authorizedGrantTypes("password", "authorization_code", "refresh_token").scopes("foo", "read", "write").accessTokenValiditySeconds(3600)
+                .secret(passwordEncoder().encode(globalSecret))
+                .authorizedGrantTypes("password", "authorization_code", "refresh_token")
+                .scopes("foo", "read", "write").accessTokenValiditySeconds(3600)
                 // 1 hour
                 .refreshTokenValiditySeconds(2592000)
                 // 30 days
@@ -76,10 +85,8 @@ public class OAuth2AuthorizationServerConfigJwt extends AuthorizationServerConfi
     @Bean
     public JwtAccessTokenConverter accessTokenConverter() {
         final JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
-        converter.setSigningKey("123");
-        // final KeyStoreKeyFactory keyStoreKeyFactory = new KeyStoreKeyFactory(new ClassPathResource("mytest.jks"), "mypass".toCharArray());
-        // converter.setKeyPair(keyStoreKeyFactory.getKeyPair("mytest"));
-        return converter;
+        converter.setSigningKey(jwtsigningKey);
+         return converter;
     }
 
     @Bean

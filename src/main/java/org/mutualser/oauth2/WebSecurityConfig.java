@@ -7,26 +7,28 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.LdapShaPasswordEncoder;
+import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 
 @Configuration
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+
 
     @Autowired
     public void globalUserDetails(final AuthenticationManagerBuilder auth) throws Exception {
-    	auth
+    	auth    	
 		.ldapAuthentication()
 			.userDnPatterns("uid={0},ou=people")
 			.groupSearchBase("ou=groups")
+			.userDetailsContextMapper(userDetailsContextMapper())
 			.contextSource()
 				.url("ldap://localhost:8389/dc=mutualser,dc=org")
 				.and()
 			.passwordCompare()
 				.passwordEncoder(new LdapShaPasswordEncoder())
 				.passwordAttribute("userPassword");
+    	
+    	auth.userDetailsService(userDetailsService());
     }
     
     @Override
@@ -45,6 +47,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		.and().formLogin().permitAll()
 		.and().csrf().disable();
 		// @formatter:on
+    }
+    
+    @Bean
+    public UserDetailsContextMapper userDetailsContextMapper() {
+    	return new CustomMutualUserDetailsContextMapper();
     }
 
 }
